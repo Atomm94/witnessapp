@@ -128,16 +128,18 @@ const login = async (req,res) => {
             err.message = 'Password is not correct!';
             return errorHandler(res, err);
         }
-        witnessFindByEmail.token = null;
         let tok = {
             id: witnessFindByEmail._id,
             email: witnessFindByEmail.email
         }
         const jwtToken = await jwt.jwtToken(tok);
-        witnessFindByEmail.token = jwtToken;
-        await witnessFindByEmail.save();
+        const witness = await witnessModel.findOne({email: email, status: status.ACTIVE}, {password: 0})
+        let respObj = {
+            Data: witness,
+            Token: jwtToken
+        }
         res.message = 'Witness'
-        return successHandler(res, witnessFindByEmail);
+        return successHandler(res, respObj);
     } catch (err) {
         return errorHandler(res, err);
     }

@@ -76,10 +76,6 @@ const witnessSchema = new Schema({
         type: String,
         default: status.ACTIVE
     },
-    token: {
-        type: String,
-        default: null
-    },
     rates: [{
         user: {
             type: Schema.Types.ObjectId,

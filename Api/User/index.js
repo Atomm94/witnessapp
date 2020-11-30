@@ -85,7 +85,6 @@ const log = async (req,res) => {
         const decodeToken = await jsonwebtoken.decode(token);
         console.log(decodeToken)
         const userFind = await userModel.findOne({_id: decodeToken.data.id, status: status.ACTIVE, disabled: false}, {password: 0});
-      //  console.log(userFind)
         return successHandler(res, userFind);
     } catch (err) {
         return errorHandler(res, err);
@@ -97,13 +96,11 @@ const log = async (req,res) => {
 const register = async (req,res) => {
     try {
         let body = req.body;
-        console.log(req.body)
         if(req.file) {
             body.avatar = req.file.filename;
         }
         const hash = await hashPassword(body.password);
         body.password = hash;
-        body.retypePassword = body.password
         const userCreate = await userModel.create(body);
         return successHandler(res, userCreate);
     } catch (err) {
@@ -128,16 +125,18 @@ const login = async (req,res) => {
            err.message = 'Password is not correct!';
            return errorHandler(res, err);
        }
-        userFindByEmail.token = null;
         let tok = {
             id: userFindByEmail._id,
             email: userFindByEmail.email
         }
+        const user = await userModel.findOne({email: email, status: status.ACTIVE}, {password: 0})
         const jwtToken = await jwt.jwtToken(tok);
-        userFindByEmail.token = jwtToken;
-        await userFindByEmail.save();
+        let respObj = {
+            Data: user,
+            Token: jwtToken
+        }
         res.message = 'User'
-       return successHandler(res, userFindByEmail);
+       return successHandler(res, respObj);
     } catch (err) {
         return errorHandler(res, err);
     }

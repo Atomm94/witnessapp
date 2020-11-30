@@ -10,7 +10,7 @@ const userEnum = {
 const userSchema = new Schema({
     avatar: {
         type: String,
-        default: null
+        default: 'https://cdn.business2community.com/wp-content/uploads/2017/08/blank-profile-picture-973460_640.png'
     },
     firstName: {
         type: String,
@@ -76,10 +76,6 @@ const userSchema = new Schema({
     status: {
         type: String,
         default: status.ACTIVE
-    },
-    token: {
-        type: String,
-        default: null
     },
     rates: [{
         witness: {
