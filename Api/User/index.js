@@ -157,7 +157,10 @@ const update = async (req,res) => {
             req.body.password = newHash
         }
         if (req.file) {
-            body.avatar = req.file.filename
+            let fullUrl = req.protocol + '://' + req.get('host');
+            if(req.file) {
+                body.avatar =  fullUrl + '/' + req.file.filename;
+            }
             const userFind = await userModel.findOne({_id: query, status: status.ACTIVE, disabled: false});
             if (dataImages.includes(userFind.avatar)) {
                 let index = dataImages.indexOf(userFind.avatar)

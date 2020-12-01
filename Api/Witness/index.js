@@ -99,8 +99,9 @@ const log = async (req,res) => {
 const register = async (req,res) => {
     try {
         let body = req.body;
+        let fullUrl = req.protocol + '://' + req.get('host');
         if(req.file) {
-            body.avatar = req.file.filename;
+            body.avatar =  fullUrl + '/' + req.file.filename;
         }
         const hash = await hashPassword(body.password);
         body.password = hash;
@@ -155,7 +156,10 @@ const update = async (req,res) => {
             req.body.password = newHash
         }
         if (req.file) {
-            body.avatar = req.file.filename
+            let fullUrl = req.protocol + '://' + req.get('host');
+            if(req.file) {
+                body.avatar =  fullUrl + '/' + req.file.filename;
+            }
             const witnessFind = await witnessModel.findOne({_id: query, status: status.ACTIVE, disabled: false});
             if (dataImages.includes(witnessFind.avatar)) {
                 let index = dataImages.indexOf(witnessFind.avatar)
