@@ -14,6 +14,8 @@ const status = require('../../config').statusEnum;
 //const uploadImage = require('../../uploadFile');
 const fs = require('fs');
 const jwt = require('../../jwtValidation');
+const path = require('path')
+const Url = require('url');
 
 //const upload = multer({ storage: uploadImage.storage, fileFilter: uploadImage.imageFilter }).single('avatar');
 let dataImages = fs.readdirSync('Media');
@@ -85,6 +87,8 @@ const log = async (req,res) => {
         const decodeToken = await jsonwebtoken.decode(token);
         console.log(decodeToken)
         const userFind = await userModel.findOne({_id: decodeToken.data.id, status: status.ACTIVE, disabled: false}, {password: 0});
+        userFind.avatar = req.url + '/' + userFind.avatar
+        userFind.save()
         return successHandler(res, userFind);
     } catch (err) {
         return errorHandler(res, err);
@@ -96,8 +100,9 @@ const log = async (req,res) => {
 const register = async (req,res) => {
     try {
         let body = req.body;
+        let fullUrl = req.protocol + '://' + req.get('host');
         if(req.file) {
-            body.avatar = req.file.filename;
+            body.avatar =  fullUrl + '/' + req.file.filename;
         }
         const hash = await hashPassword(body.password);
         body.password = hash;
