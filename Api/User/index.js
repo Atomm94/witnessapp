@@ -123,24 +123,46 @@ const register = async (req,res) => {
 const login = async (req,res) => {
     const {email, password} = req.body;
     try {
-       const userFindByEmail = await userModel.findOne({email: email, status: status.ACTIVE});
-       const compare = await comparePassword(password, userFindByEmail.password);
-       if (!compare) {
-           let err = {};
-           err.message = 'Password is not correct!';
-           return errorHandler(res, err);
-       }
-        let tok = {
-            id: userFindByEmail._id,
-            email: userFindByEmail.email
+        const userFindByEmail = await userModel.findOne({email: email, status: status.ACTIVE});
+        const witnessFindByEmail = await witnessModel.findOne({email: email, status: status.ACTIVE});
+        let respObj = {};
+        if(userFindByEmail) {
+            const compare = await comparePassword(password, userFindByEmail.password);
+            if (!compare) {
+                let err = {};
+                err.message = 'Password is not correct!';
+                return errorHandler(res, err);
+            }
+            let tok = {
+                id: userFindByEmail._id,
+                email: userFindByEmail.email
+            }
+            const user = await userModel.findOne({email: email, status: status.ACTIVE}, {password: 0})
+            const jwtToken = await jwt.jwtToken(tok);
+            respObj = {
+                Data: user,
+                Token: jwtToken
+            }
+            res.message = 'User'
+        } else {
+            const compare = await comparePassword(password, witnessFindByEmail.password);
+            if (!compare) {
+                let err = {};
+                err.message = 'Password is not correct!';
+                return errorHandler(res, err);
+            }
+            let tok = {
+                id: witnessFindByEmail._id,
+                email: witnessFindByEmail.email
+            }
+            const witness = await witnessModel.findOne({email: email, status: status.ACTIVE}, {password: 0})
+            const jwtToken = await jwt.jwtToken(tok);
+            respObj = {
+                Data: witness,
+                Token: jwtToken
+            }
+            res.message = 'Witness'
         }
-        const user = await userModel.findOne({email: email, status: status.ACTIVE}, {password: 0})
-        const jwtToken = await jwt.jwtToken(tok);
-        let respObj = {
-            Data: user,
-            Token: jwtToken
-        }
-        res.message = 'User'
        return successHandler(res, respObj);
     } catch (err) {
         return errorHandler(res, err);
