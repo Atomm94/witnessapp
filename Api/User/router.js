@@ -9,7 +9,6 @@ const upload = multer({ storage: uploadImage.storage, fileFilter: uploadImage.im
 user.get('/admin/log/getAll', controllers.getAll)
 user.get('/log/getBooks', controllers.getBooks)
 user.get('/admin/log/getReview', controllers.getReview)
-user.get('/log', controllers.log)
 user.post('/register', upload, validation.validateRegister, controllers.register)
 user.post('/login', validation.validateLogin, controllers.login)
 user.put('/admin/log/disable', controllers.disable)

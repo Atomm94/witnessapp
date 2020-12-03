@@ -109,6 +109,11 @@ const witnessSchema = new Schema({
         type: Schema.Types.ObjectId,
         ref: 'witnessDocument'
     },
+    createdAt: {
+        type: Date,
+        default: Date.now()
+    },
+    updatedAt: Date
 })
 
 mongoose.model('witness', witnessSchema);

@@ -10,7 +10,6 @@ const forgot = require('./resetPassword').emailSend;
 const fs = require('fs');
 const multer = require('multer')
 const uploadImage = require('./uploadFile');
-const SocketService = require('./Socket.io/server');
 const socketAuth = require('./jwtValidation').socketAuth;
 // const http = require("http").createServer(app);
 // SocketService.init(http);
@@ -22,7 +21,7 @@ const socketAuth = require('./jwtValidation').socketAuth;
 // SocketService.init(http);
 
 const server = require('http').createServer(app);
-const io = require("./Socket.io/server").listen(server);
+const io = require("./Api/Chat/index").listen(server);
 
 io.use(socketAuth)
 // const io = require("./Socket.io/client").listen(http);
@@ -47,7 +46,7 @@ app.use('/token', token);
 
 
 app.get('/', (req,res) => {
-    res.sendFile(path.join(__dirname, 'Socket.io', 'index.html'))
+    res.sendFile(path.join(__dirname, '/api/Chat', 'main.html'))
 })
 
 

@@ -7,7 +7,7 @@ const uploadImage = require('../../uploadFile');
 const upload = multer({ storage: uploadImage.storage, fileFilter: uploadImage.imageFilter }).single('avatar');
 const uploadDocs = multer({ storage: uploadImage.storage, fileFilter: uploadImage.imageFilter }).array('documents', 4);
 
-witness.get('/log', controllers.log)
+
 witness.get('/admin/log/getAll', controllers.getAll)
 witness.get('/log/getAppointments', controllers.getAppointments)
 witness.get('/log/getDocument', controllers.getDocument)
