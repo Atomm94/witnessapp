@@ -330,7 +330,6 @@ const getWitnessDocument = async (req,res) => {
 
 module.exports = {
     register,
-    login,
     getAll,
     getAppointments,
     getDocument,
