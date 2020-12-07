@@ -3,9 +3,10 @@
 const jsonwebtoken = require('jsonwebtoken');
 const successHandler = require('../responseHandler').successHandler;
 const errorHandler = require('../responseHandler').errorHandler;
-const userModel = require('../../Models/models').user;
-const witnessModel = require('../../Models/models').witness;
-const bookModel = require('../../Models/models').bookAppintment;
+// const userModel = require('../../Models/models').user;
+// const witnessModel = require('../../Models/models').witness;
+// const bookModel = require('../../Models/models').bookAppintment;
+const Models = require('../../Models/models');
 const hashPassword = require('../../helpFunctions').hashPassword;
 const comparePassword = require('../../helpFunctions').comparePassword;
 const status = require('../../config').statusEnum;
@@ -21,14 +22,14 @@ const getAll = async (req,res) => {
     try {
         const token = req.authorization || req.headers['authorization'];
         const decodeToken = await jsonwebtoken.decode(token);
-        const adminFind = await userModel.findOne({_id: decodeToken.data.id, status: status.ACTIVE, role_admin: true});
+        const adminFind = await Models.user.findOne({_id: decodeToken.data.id, status: status.ACTIVE, role_admin: true});
         if (!adminFind) {
             let err = {};
             err.message = "this Admin is not find!"
             return errorHandler(res, err);
         }
         /*without token, password*/
-        const userFind = await userModel.find({status: status.ACTIVE}, {password: 0});
+        const userFind = await Models.user.find({status: status.ACTIVE}, {password: 0});
         return successHandler(res, userFind);
     } catch (err) {
         return errorHandler(res, err);
@@ -40,13 +41,13 @@ const disable = async (req,res) => {
         const token = req.authorization || req.headers['authorization'];
         const decodeToken = await jsonwebtoken.decode(token);
         const userId = req.query.userId;
-        const adminFind = await userModel.findOne({_id: decodeToken.data.id, status: status.ACTIVE, role_admin: true});
+        const adminFind = await Models.user.findOne({_id: decodeToken.data.id, status: status.ACTIVE, role_admin: true});
         if (!adminFind) {
             let err = {};
             err.message = "this Admin is not find!"
             return errorHandler(res, err);
         }
-        const userFind = await userModel.updateOne({_id: userId, status: status.ACTIVE}, {$set: {disabled: true}});
+        const userFind = await Models.user.updateOne({_id: userId, status: status.ACTIVE}, {$set: {disabled: true}});
         if (userFind.nModified === 0) {
             let err = {};
             err.message = "this user is not find!"
@@ -64,13 +65,13 @@ const able = async (req,res) => {
         const token = req.authorization || req.headers['authorization'];
         const decodeToken = await jsonwebtoken.decode(token);
         const userId = req.query.userId;
-        const adminFind = await userModel.findOne({_id: decodeToken.data.id, status: status.ACTIVE, role_admin: true});
+        const adminFind = await Models.user.findOne({_id: decodeToken.data.id, status: status.ACTIVE, role_admin: true});
         if (!adminFind) {
             let err = {};
             err.message = "this Admin is not find!"
             return errorHandler(res, err);
         }
-        const userFind = await userModel.updateOne({_id: userId, status: status.ACTIVE}, {$set: {disabled: false}});
+        const userFind = await Models.user.updateOne({_id: userId, status: status.ACTIVE}, {$set: {disabled: false}});
         if (userFind.nModified === 0) {
             let err = {};
             err.message = "this user is not find!"
@@ -107,7 +108,7 @@ const register = async (req,res) => {
         }
         const hash = await hashPassword(body.password);
         body.password = hash;
-        const userCreate = await userModel.create(body);
+        const userCreate = await Models.user.create(body);
         return successHandler(res, userCreate);
     } catch (err) {
         if (req.file) {
@@ -123,8 +124,8 @@ const register = async (req,res) => {
 const login = async (req,res) => {
     const {email, password} = req.body;
     try {
-        const userFindByEmail = await userModel.findOne({email: email, status: status.ACTIVE});
-        const witnessFindByEmail = await witnessModel.findOne({email: email, status: status.ACTIVE});
+        const userFindByEmail = await Models.user.findOne({email: email, status: status.ACTIVE});
+        const witnessFindByEmail = await Models.witness.findOne({email: email, status: status.ACTIVE});
         let respObj = {};
         if(userFindByEmail) {
             const compare = await comparePassword(password, userFindByEmail.password);
@@ -137,7 +138,7 @@ const login = async (req,res) => {
                 id: userFindByEmail._id,
                 email: userFindByEmail.email
             }
-            const user = await userModel.findOne({email: email, status: status.ACTIVE}, {password: 0})
+            const user = await Models.user.findOne({email: email, status: status.ACTIVE}, {password: 0})
             const jwtToken = await jwt.jwtToken(tok);
             respObj = {
                 Data: user,
@@ -155,7 +156,7 @@ const login = async (req,res) => {
                 id: witnessFindByEmail._id,
                 email: witnessFindByEmail.email
             }
-            const witness = await witnessModel.findOne({email: email, status: status.ACTIVE}, {password: 0})
+            const witness = await Models.witness.findOne({email: email, status: status.ACTIVE}, {password: 0})
             const jwtToken = await jwt.jwtToken(tok);
             respObj = {
                 Data: witness,
@@ -185,15 +186,16 @@ const update = async (req,res) => {
             if(req.file) {
                 body.avatar =  fullUrl + '/' + req.file.filename;
             }
-            const userFind = await userModel.findOne({_id: decodeToken.data.id, status: status.ACTIVE, disabled: false});
+            const userFind = await Models.user.findOne({_id: decodeToken.data.id, status: status.ACTIVE, disabled: false});
             if (dataImages.includes(userFind.avatar)) {
                 let index = dataImages.indexOf(userFind.avatar)
                 let remove = await fs.unlinkSync(`Media/${dataImages[index]}`);
             }
         }
-        const userUpdate = await userModel.updateOne({_id:decodeToken.data.id}, body);
+        const userUpdate = await Models.user.updateOne({_id:decodeToken.data.id}, body);
+        const userData = await Models.user.findOne({_id: decodeToken.data.id});
         res.message = `This (${decodeToken.data.id}) user updated successfully!`
-        return successHandler(res, userUpdate);
+        return successHandler(res, userData);
     } catch (err) {
         return errorHandler(res, err)
     }
@@ -204,12 +206,12 @@ const remove = async (req,res) => {
     try {
         const token = req.authorization || req.headers['authorization'];
         const decodeToken = await jsonwebtoken.decode(token);
-        const userFind = await userModel.findOne({_id: decodeToken.data.id, status: status.ACTIVE, disabled: false});
+        const userFind = await Models.user.findOne({_id: decodeToken.data.id, status: status.ACTIVE, disabled: false});
         if (dataImages.includes(userFind.avatar)) {
             let index = await dataImages.indexOf(userFind.avatar)
             let remove = await fs.unlinkSync(`Media/${dataImages[index]}`);
         }
-        const userDelete = await userModel.updateOne({_id: decodeToken.data.id, status: status.ACTIVE, disabled: false}, {
+        const userDelete = await Models.user.updateOne({_id: decodeToken.data.id, status: status.ACTIVE, disabled: false}, {
             $set: {status: status.DELETE}
         });
         return successHandler(res, userDelete);
@@ -229,17 +231,17 @@ const rate = async (req,res) => {
             user: decodeToken.data.id,
             star: star
         }
-        const userFind = await userModel.findOne({_id: witnessId, status: status.ACTIVE, disabled: false});
+        const userFind = await Models.user.findOne({_id: witnessId, status: status.ACTIVE, disabled: false});
         if (!userFind) {
             let err = {};
             err.message = 'This user are disabled!';
             return errorHandler(res, err);
         }
-        const witnessUpdate = await witnessModel.updateOne({_id: witnessId, status: status.ACTIVE, disabled: false}, {
+        const witnessUpdate = await Models.witness.updateOne({_id: witnessId, status: status.ACTIVE, disabled: false}, {
             $push: {rates: rateObj}
         });
         if (witnessUpdate.nModified !== 0) {
-            const witnessRatingFind = await witnessModel.findById(witnessId);
+            const witnessRatingFind = await Models.witness.findById(witnessId);
             let rate = 0;
             let length = 0;
             const Rate = await witnessRatingFind.rates.map(item => {
@@ -270,13 +272,13 @@ const review = async (req,res) => {
             user: decodeToken.data.id,
             message: review
         }
-        const userFind = await userModel.findOne({_id: decodeToken.data.id, status: status.ACTIVE, disabled: false});
+        const userFind = await Models.user.findOne({_id: decodeToken.data.id, status: status.ACTIVE, disabled: false});
         if (!userFind) {
             let err = {};
             err.message = 'This user are disabled!';
             return errorHandler(res, err);
         }
-        const witnessUpdate = await witnessModel.updateOne({_id: witnessId, status: status.ACTIVE, disabled: false}, {
+        const witnessUpdate = await Models.witness.updateOne({_id: witnessId, status: status.ACTIVE, disabled: false}, {
             $push: {reviews: reviewObj}
         });
         if (witnessUpdate.nModified === 0) {
@@ -295,7 +297,7 @@ const getBooks = async (req,res) => {
     try {
         const token = req.authorization || req.headers['authorization'];
         const decodeToken = await jsonwebtoken.decode(token);
-        const findAppointments = await bookModel.find({user: decodeToken.data.id, status: status.ACTIVE});
+        const findAppointments = await Models.bookAppointment.find({user: decodeToken.data.id, status: status.ACTIVE});
         return successHandler(res, findAppointments);
     } catch (err) {
         return errorHandler(res, err);
@@ -306,7 +308,7 @@ const admin = async (req, res) => {
     try {
         const token = req.authorization || req.headers['authorization'];
         const decodeToken = await jsonwebtoken.decode(token);
-        const chooseAdmin = await userModel.updateOne({_id: decodeToken.data.id, status: status.ACTIVE, disabled: false}, {$set: {role_admin: true}});
+        const chooseAdmin = await Models.user.updateOne({_id: decodeToken.data.id, status: status.ACTIVE, disabled: false}, {$set: {role_admin: true}});
         if (chooseAdmin.nModified === 0) {
             let err = {};
             err.message = 'This user is not find!';
@@ -324,15 +326,15 @@ const getReview = async (req,res) => {
         const token = req.authorization || req.headers['authorization'];
         const decodeToken = await jsonwebtoken.decode(token);
         const {getReview} = req.query.getReview;
-        const adminFind = await userModel.findOne({_id: decodeToken.data.id, status: status.ACTIVE, role_admin: true});
+        const adminFind = await Models.user.findOne({_id: decodeToken.data.id, status: status.ACTIVE, role_admin: true});
         if (!adminFind) {
             let err = {};
             err.message = "this Admin is not find!"
             return errorHandler(res, err);
         }
-        const findReviewUser = await userModel.findOne({_id: getReview, status: status.ACTIVE})
+        const findReviewUser = await Models.user.findOne({_id: getReview, status: status.ACTIVE})
         if (!findReviewUser) {
-            const findReviewWitness = await witnessModel.findOne({_id: getReview, status: status.ACTIVE})
+            const findReviewWitness = await Models.witness.findOne({_id: getReview, status: status.ACTIVE})
             if (!findReviewWitness) {
                 let err = {}
                 err.message = "Don't find user and witness"
@@ -346,6 +348,28 @@ const getReview = async (req,res) => {
     }
 }
 
+const getMessages = async (req,res) => {
+    try {
+        const token = req.authorization || req.headers['authorization'];
+        const decodeToken = await jsonwebtoken.decode(token);
+        const chatId = req.query.chatId;
+        const findChat = await Models.chat.findOne({
+            $and: [
+                {_id: chatId},
+                {$or: [{firstUserId: decodeToken.data.id}, {secondUserId: decodeToken.data.id}]}
+            ]
+        });
+        if (!findChat) {
+            let err = {};
+            err.message = "Chat is not find!";
+            return errorHandler(res, err);
+        }
+        res.message = `All messages on this chat ${findChat._id}`
+        return successHandler(res, findChat.messages);
+    } catch (err) {
+        return errorHandler(res, err);
+    }
+}
 
 module.exports = {
     getAll,
@@ -359,5 +383,6 @@ module.exports = {
     register,
     login,
     admin,
-    update
+    update,
+    getMessages
 }

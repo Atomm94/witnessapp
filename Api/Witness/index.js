@@ -106,7 +106,7 @@ const register = async (req,res) => {
         let body = req.body;
         let fullUrl = req.protocol + '://' + req.get('host');
         if(req.file) {
-            body.avatar =  fullUrl + '/' + req.file.filename;
+            body.avatar = fullUrl + '/' + req.file.filename;
         }
         const hash = await hashPassword(body.password);
         body.password = hash;
