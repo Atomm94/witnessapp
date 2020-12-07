@@ -42,10 +42,10 @@ token.get('/getData', async (req,res) => {
         const findReviewUser = await userModel.findOne({_id: decodeToken.data.id}, {token: 0, password: 0})
         if (!findReviewUser) {
             const findReviewWitness = await witnessModel.findOne({_id: decodeToken.data.id}, {token: 0, password: 0})
-            res.message = "Witness"
+            res.message = "witness"
             return successHandler(res, findReviewWitness);
         }
-        res.message = "User"
+        res.message = "user"
         return successHandler(res, findReviewUser);
     } catch (err) {
         return errorHandler(res, err);

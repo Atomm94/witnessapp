@@ -144,7 +144,7 @@ const login = async (req,res) => {
                 Data: user,
                 Token: jwtToken
             }
-            res.message = 'User'
+            res.message = 'user'
         } else {
             const compare = await comparePassword(password, witnessFindByEmail.password);
             if (!compare) {
@@ -162,7 +162,7 @@ const login = async (req,res) => {
                 Data: witness,
                 Token: jwtToken
             }
-            res.message = 'Witness'
+            res.message = 'witness'
         }
        return successHandler(res, respObj);
     } catch (err) {
