@@ -176,7 +176,7 @@ const update = async (req,res) => {
         const witnessUpdate = await witnessModel.updateOne({_id:decodeToken.data.id, status: status.ACTIVE, disabled: false}, body);
         const witnessData = await witnessModel.findOne({_id: decodeToken.data.id});
         res.message = `This (${decodeToken.data.id}) witness updated successfully!`
-        return successHandler(res, witnessUpdate);
+        return successHandler(res, witnessData);
     } catch (err) {
         return errorHandler(res, err)
     }
