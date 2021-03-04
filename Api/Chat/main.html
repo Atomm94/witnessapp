@@ -7,7 +7,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.3.0/socket.io.js"></script>
     <script>
         const socket = io.connect(
-            `http://localhost:5000?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRhIjp7ImlkIjoiNWZjOGJlZTQ5OGVjYmIyMzM4ODYxNzcwIiwiZW1haWwiOiJjbGVhckBtYWlsLnJ1In0sImlhdCI6MTYwNzA2Mzg4OH0.cEY8qvu80LWgPSDVxr7d5QKmnyG8ZRXhFqNgE9zDGJo`
+            `http://localhost:5000?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRhIjp7ImlkIjoiNjAyNTBiNDYxZGJlNmUxM2JjOWI4MTdkIiwiZW1haWwiOiJib2JvQG1haWwucnUifSwiaWF0IjoxNjE0MzM0MDQ1fQ.d73sNV0F1udex0mvW-WKk1FYzWoCKa4QJcxGpqbiUbU`
         );
         socket.on("connect", () => {
             console.log("connected to the server");
@@ -23,7 +23,7 @@
 
             sendBtn.onclick = function () {
 
-                socket.emit("message", "5fc89409fa55e21ee0913307", msg.value);
+                socket.emit("message", "5fe04a8b28db1113e41806bd", msg.value);
                 const m = document.createElement("p");
                 m.style = "color: black";
                 m.innerHTML += msg.value;

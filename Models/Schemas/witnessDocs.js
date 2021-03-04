@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
-const status = require('../../config').statusEnum;
+const { witnessStatus } = require('../../Helper/constant');
 
 const witnessDocsSchema = new Schema({
     witness: {
@@ -11,9 +11,9 @@ const witnessDocsSchema = new Schema({
         type: [String],
         default: null
     },
-    status: {
+    delete: {
         type: Boolean,
-        default: status.ACTIVE
+        default: false
     }
 })
 

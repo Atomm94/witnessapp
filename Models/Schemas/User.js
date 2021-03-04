@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
-const status = require('../../config').statusEnum;
+const { status } = require('../../config');
 
 const userEnum = {
     NOTARY: 'notary',
@@ -69,13 +69,13 @@ const userSchema = new Schema({
         type: String,
         required: true
     },
-    book: {
+    books: [{
         type: Schema.Types.ObjectId,
         ref: 'book'
-    },
-    status: {
-        type: String,
-        default: status.ACTIVE
+    }],
+    delete: {
+        type: Boolean,
+        default: false
     },
     rates: [{
         witness: {
@@ -92,23 +92,22 @@ const userSchema = new Schema({
         type: Number,
         default: null
     },
-    reviews: [{
-        witness: {
-            type: Schema.Types.ObjectId,
-            ref: 'witness'
-        },
-        message: {
-            type: String,
-            required: true
-        }
-    }],
     disabled: {
         type: Boolean,
         default: false
     },
-    role_admin: {
-        type: Boolean,
-        default: false
+    documents: {
+        type: [String],
+        default: []
+    },
+    location: {
+        type: {
+            type: String,
+            enum: ['Point'],
+        },
+        coordinates: {
+            type: [Number],
+        }
     },
     createdAt: {
         type: Date,
@@ -116,5 +115,7 @@ const userSchema = new Schema({
     },
     updatedAt: Date
 })
+
+userSchema.index({ location: '2dsphere' });
 
 mongoose.model('user', userSchema);

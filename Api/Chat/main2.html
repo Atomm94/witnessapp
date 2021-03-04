@@ -7,7 +7,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.3.0/socket.io.js"></script>
     <script>
         const socket = io.connect(
-            `http://localhost:5000?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRhIjp7ImlkIjoiNWZjODk0MDlmYTU1ZTIxZWUwOTEzMzA3IiwiZW1haWwiOiJydWJ5QG1haWwucnUifSwiaWF0IjoxNjA2OTgxMTA5fQ.OASzJEuHJ8Qb00iwNB9tHQJU8mZm1pwwFTHpvS6Aj9Q`
+            `http://localhost:5000?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRhIjp7ImlkIjoiNWZlMDRhOGIyOGRiMTExM2U0MTgwNmJkIiwiZW1haWwiOiJqb0BtYWlsLnJ1In0sImlhdCI6MTYxNDY2NTcyMH0.1qUuBKWQPVPcBQeUcunn0Fi8kmXf-oq-n2rCZPxnp04`
         );
         socket.on("connect", () => {
             console.log("connected to the server");
@@ -23,7 +23,7 @@
 
             sendBtn.onclick = function () {
 
-                socket.emit("message", "5fc8bee498ecbb2338861770", msg.value);
+                socket.emit("message", "60250b461dbe6e13bc9b817d", msg.value);
                 const m = document.createElement("p");
                 m.style = "color: black";
                 m.innerHTML += msg.value;

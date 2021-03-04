@@ -25,7 +25,6 @@ const schemaLogin = Joi.object().keys({
 });
 
 const schemaRate = Joi.object().keys({
-    id: Joi.string().required(),
     witnessId: Joi.string().required(),
     star: Joi.number().min(1).max(5).required()
 });

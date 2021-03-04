@@ -15,13 +15,7 @@ mongoose.connect(config.database, {
 }).then(() => console.log('Mongoose is connected successfully...'))
     .catch(err => console.log(err))
 
-const statusEnum = {
-    ACTIVE: 'active',
-    DELETE: 'delete'
-}
-
 
 module.exports = {
-    config,
-    statusEnum
+    config
 }

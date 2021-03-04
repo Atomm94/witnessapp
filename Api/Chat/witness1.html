@@ -1,0 +1,46 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>User Location</title>
+    <!--    <link href="style.css" rel="stylesheet">-->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.3.0/socket.io.js"></script>
+    <script>
+        const socket = io.connect(
+            `http://localhost:5000?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRhIjp7ImlkIjoiNjAyNTBiNDYxZGJlNmUxM2JjOWI4MTdkIiwiZW1haWwiOiJib2JvQG1haWwucnUifSwiaWF0IjoxNjE0MzM0MDQ1fQ.d73sNV0F1udex0mvW-WKk1FYzWoCKa4QJcxGpqbiUbU`
+        );
+        socket.on("connect", () => {
+            console.log("connected to the server");
+            const sendBtn = document.getElementById('sendBtn');
+            socket.on("newOrder", (resp) => {
+                if (!Array.isArray(resp)) {
+                    let text = document.createElement("h2");
+                    text.innerHTML += resp;
+                    document.body.append(text);
+                } else {
+                    resp.map(item => {
+                        document.write('<br><h2>----------------</h2><br>')
+                        let values = Object.values(item);
+                        values.map(el => {
+                            let li = document.createElement("li");
+                            li.innerHTML += el.toString() + '</br>';
+                            document.body.append(li);
+                        })
+                    })
+                }
+            });
+
+            sendBtn.onclick = function () {
+                socket.emit("findNearWitness", "40.1936097584473", "44.50411990398105");
+            };
+
+        });
+    </script>
+</head>
+<body>
+<div id="log"></div><br>
+<div style="margin-bottom: 15px;">
+    <input type="submit" value="send" id="sendBtn">
+</div>
+</body>
+</html>

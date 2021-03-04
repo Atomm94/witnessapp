@@ -8,6 +8,10 @@ const chatSchema = new Schema(
 
         messages: {
            type: Object
+        },
+        delete: {
+            type: Boolean,
+            default: false
         }
     }
 );

@@ -1,120 +1,36 @@
-const express = require('express');
-const witness = express();
-const jsonwebtoken = require('jsonwebtoken');
-const successHandler = require('../responseHandler').successHandler;
-const errorHandler = require('../responseHandler').errorHandler;
-const witnessModel = require('../../Models/models').witness;
-const userModel = require('../../Models/models').user;
-const bookModel = require('../../Models/models').bookAppointment;
-const documentModel = require('../../Models/models').witnessDocument;
-const hashPassword = require('../../helpFunctions').hashPassword;
-const comparePassword = require('../../helpFunctions').comparePassword;
-const validate = require('./validation');
-const status = require('../../config').statusEnum;
-const multer = require('multer');
-const uploadImage = require('../../uploadFile');
 const fs = require('fs');
-const jwt = require('../../jwtValidation');
+const path = require('path');
+const jsonwebtoken = require('jsonwebtoken');
+const Models = require('../../Models/models');
+const { status } = require('../../config');
+const { successHandler, errorHandler } = require('../../Helper/responseHandler');
+const { hashPassword, comparePassword } = require('../../Helper/helpFunctions');
+const validate = require('./validation');
+const multer = require('multer');
+const uploadImage = require('../../Helper/uploadFile');
+const jwt = require('../../Auth/jwtValidation');
+let dataImages;
 
-// const upload = multer({ storage: uploadImage.storage, fileFilter: uploadImage.imageFilter }).single('avatar');
-// const uploadDocs = multer({ storage: uploadImage.storage, fileFilter: uploadImage.imageFilter }).array('documents', 4);
-//let dataDocuments = fs.readdirSync('Media/PDF');
-let dataImages = fs.readdirSync('Media');
-
-const getAll = async (req,res) => {
-    try {
-        const token = req.authorization || req.headers['authorization'];
-        const decodeToken = await jsonwebtoken.decode(token);
-        const adminFind = await userModel.findOne({_id: decodeToken.data.id, status: status.ACTIVE, role_admin: true});
-        if (!adminFind) {
-            let err = {};
-            err.message = "this Admin not find!"
-            return errorHandler(res, err);
-        }
-        /*without token, password*/
-        const witnessFind = await witnessModel.find({status: status.ACTIVE}, {password: 0});
-        return successHandler(res, witnessFind);
-    } catch (err) {
-        return errorHandler(res, err);
-    }
-}
-
-const disable = async (req,res) => {
-    try {
-        const token = req.authorization || req.headers['authorization'];
-        const decodeToken = await jsonwebtoken.decode(token);
-        const witnessId = req.query.witnessId;
-        const adminFind = await userModel.findOne({_id: decodeToken.data.id, status: status.ACTIVE, role_admin: true});
-        if (!adminFind) {
-            let err = {};
-            err.message = "this Admin is not find!"
-            return errorHandler(res, err);
-        }
-        const witnessFind = await witnessModel.updateOne({_id: witnessId, status: status.ACTIVE}, {$set: {disabled: true}});
-        if (witnessFind.nModified === 0) {
-            let err = {};
-            err.message = "this witness is not find!"
-            return errorHandler(res, err);
-        }
-        res.message = "witness is disabled!"
-        return successHandler(res, witnessFind);
-    } catch (err) {
-        return errorHandler(res, err);
-    }
-}
-
-const able = async (req,res) => {
-    try {
-        const token = req.authorization || req.headers['authorization'];
-        const decodeToken = await jsonwebtoken.decode(token);
-        const witnessId = req.query.witnessId;
-        const adminFind = await userModel.findOne({_id: decodeToken.data.id, status: status.ACTIVE, role_admin: true});
-        if (!adminFind) {
-            let err = {};
-            err.message = "this Admin is not find!"
-            return errorHandler(res, err);
-        }
-        const witnessFind = await witnessModel.updateOne({_id: witnessId, status: status.ACTIVE}, {$set: {disabled: false}});
-        if (witnessFind.nModified === 0) {
-            let err = {};
-            err.message = "this witness is not find!"
-            return errorHandler(res, err);
-        }
-        res.message = "witness is abled!"
-        return successHandler(res, witnessFind);
-    } catch (err) {
-        return errorHandler(res, err);
-    }
-}
-
-
-// const log = async (req,res) => {
-//     try {
-//         const token = req.authorization || req.headers['authorization'];
-//         const decodeToken = await jsonwebtoken.decode(token);
-//         const witnessFind = await witnessModel.findOne({_id: decodeToken.data.id, status: status.ACTIVE}, {password: 0});
-//         return successHandler(res, witnessFind);
-//     } catch (err) {
-//         return errorHandler(res, err);
-//     }
-// }
+/** Register, Login, Change Profile, Change Password **/
 
 // validate.validateRegister, upload
 
 const register = async (req,res) => {
     try {
         let body = req.body;
+        dataImages = fs.readdirSync('Media');
         let fullUrl = req.protocol + '://' + req.get('host');
         if(req.file) {
             body.avatar = fullUrl + '/' + req.file.filename;
         }
         const hash = await hashPassword(body.password);
         body.password = hash;
-        body.retypePassword = body.password
-        const userCreate = await witnessModel.create(body);
+        body.retypePassword = body.password;
+        const userCreate = await Models.witness.create(body);
         return successHandler(res, userCreate);
     } catch (err) {
         if (req.file) {
+            dataImages = fs.readdirSync('Media');
             if (dataImages.includes(req.file.filename)) {
                 let index = dataImages.indexOf(req.file.filename)
                 let remove = await fs.unlinkSync(`Media/${dataImages[index]}`);
@@ -123,33 +39,6 @@ const register = async (req,res) => {
         return errorHandler(res, err);
     }
 }
-
-// const login = async (req,res) => {
-//     const {email, password} = req.body;
-//     try {
-//         const witnessFindByEmail = await witnessModel.findOne({email: email, status: status.ACTIVE});
-//         const compare = await comparePassword(password, witnessFindByEmail.password);
-//         if (!compare) {
-//             let err = {};
-//             err.message = 'Password is not correct!';
-//             return errorHandler(res, err);
-//         }
-//         let tok = {
-//             id: witnessFindByEmail._id,
-//             email: witnessFindByEmail.email
-//         }
-//         const jwtToken = await jwt.jwtToken(tok);
-//         const witness = await witnessModel.findOne({email: email, status: status.ACTIVE}, {password: 0})
-//         let respObj = {
-//             Data: witness,
-//             Token: jwtToken
-//         }
-//         res.message = 'Witness'
-//         return successHandler(res, respObj);
-//     } catch (err) {
-//         return errorHandler(res, err);
-//     }
-// }
 
 // upload
 const update = async (req,res) => {
@@ -167,14 +56,14 @@ const update = async (req,res) => {
             if(req.file) {
                 body.avatar =  fullUrl + '/' + req.file.filename;
             }
-            const witnessFind = await witnessModel.findOne({_id: decodeToken.data.id, status: status.ACTIVE, disabled: false});
+            const witnessFind = await Models.witness.findOne({_id: decodeToken.data.id, delete: false, disabled: false});
             if (dataImages.includes(witnessFind.avatar)) {
                 let index = dataImages.indexOf(witnessFind.avatar)
                 let remove = await fs.unlinkSync(`Media/${dataImages[index]}`);
             }
         }
-        const witnessUpdate = await witnessModel.updateOne({_id:decodeToken.data.id, status: status.ACTIVE, disabled: false}, body);
-        const witnessData = await witnessModel.findOne({_id: decodeToken.data.id});
+        const witnessUpdate = await Models.witness.updateOne({_id:decodeToken.data.id, delete: false, disabled: false}, body);
+        const witnessData = await Models.witness.findOne({_id: decodeToken.data.id});
         res.message = `This (${decodeToken.data.id}) witness updated successfully!`
         return successHandler(res, witnessData);
     } catch (err) {
@@ -182,17 +71,42 @@ const update = async (req,res) => {
     }
 }
 
+const changePassword = async (req,res) => {
+    try {
+        let {password, retypePassword} = req.body;
+        if (password !== retypePassword) {
+            let err = {};
+            err.message = "password & retype password is not match!";
+            return errorHandler(res, err);
+        }
+        const token = req.authorization || req.headers['authorization'];
+        const decodeToken = await jsonwebtoken.decode(token);
+        const newHash = await hashPassword(password);
+        password = newHash
+        const userUpdate = await Models.witness.updateOne({_id: decodeToken.data.id, delete: false, disabled: false}, {
+            $set: {password: password}
+        });
+        res.message = "Password is changed successfully!";
+        return successHandler(res, null)
+    } catch (err) {
+        return errorHandler(res, err);
+    }
+}
+
+// ---------------------------------------------------------------------
 
 const remove = async (req,res) => {
     try {
         const token = req.authorization || req.headers['authorization'];
         const decodeToken = await jsonwebtoken.decode(token);
-        const witnessFind = await witnessModel.findOne({_id: decodeToken.data.id, status: status.ACTIVE});
+        const witnessFind = await Models.witness.findOne({_id: decodeToken.data.id, delete: false});
+        dataImages = fs.readdirSync('Media');
         if (dataImages.includes(witnessFind.avatar)) {
             let index = await dataImages.indexOf(witnessFind.avatar)
             let remove = await fs.unlinkSync(`Media/${dataImages[index]}`);
         }
-        const witnessDelete = await witnessModel.updateOne({_id: decodeToken.data.id, disabled: false}, {$set: {status: status.DELETE}});
+        res.message = "This witness is removed"
+        const witnessDelete = await Models.witness.updateOne({_id: decodeToken.data.id, disabled: false}, {$set: {delete: true}});
         return successHandler(res, witnessDelete);
     } catch (err) {
         return errorHandler(res, err);
@@ -209,9 +123,9 @@ const rate = async (req,res) => {
             witness: decodeToken.data.id,
             star: star
         }
-        const userUpdate = await userModel.updateOne({_id: userId, status: status.ACTIVE, disabled: false}, {$push: {rates: rateObj}});
+        const userUpdate = await Models.user.updateOne({_id: userId, delete: false, disabled: false}, {$push: {rates: rateObj}});
         if (userUpdate) {
-            const userRatingFind = await userModel.findById(userId);
+            const userRatingFind = await Models.user.findById(userId);
             let rate = 0;
             let length = 0;
             const Rate = await userRatingFind.rates.map(item => {
@@ -230,72 +144,62 @@ const rate = async (req,res) => {
     }
 }
 
-
-const review = async (req,res) => {
-    try {
-        const token = req.authorization || req.headers['authorization'];
-        const decodeToken = await jsonwebtoken.decode(token);
-        const userId = req.query.userId;
-        const review = req.body.review
-        let reviewObj = {
-            witness: decodeToken.data.id,
-            message: review
-        }
-        const witnessFind = await witnessModel.findOne({_id: decodeToken.data.id, status: status.ACTIVE, disabled: false});
-        if (!witnessFind) {
-            let err = {};
-            err.message = 'This witness are disabled!';
-            return errorHandler(res, err);
-        }
-        const userUpdate = await userModel.updateOne({_id: userId, status: status.ACTIVE, disabled: false}, {
-            $push: {reviews: reviewObj}
-        });
-        if (userUpdate.nModified === 0) {
-            let err = {}
-            err.message = "Don't find this user!"
-            return errorHandler(res, err)
-        }
-
-        return successHandler(res, reviewObj);
-    } catch (err) {
-        return errorHandler(res, err);
-    }
-}
-
-const getAppointments = async (req,res) => {
-    try {
-        const token = req.authorization || req.headers['authorization'];
-        const decodeToken = await jsonwebtoken.decode(token);
-        const findAppointments = await bookModel.find({witness: decodeToken.data.id, status: status.ACTIVE});
-        return successHandler(res, findAppointments);
-    } catch (err) {
-        return errorHandler(res, err);
-    }
-}
-
 // uploadDocs
 const uploadDocs = async (req,res) => {
     try {
         const token = req.authorization || req.headers['authorization'];
         const decodeToken = await jsonwebtoken.decode(token);
-        const witnessId = req.query.witnessId;
-        const adminFind = await userModel.findOne({_id: decodeToken.data.id, status: status.ACTIVE, role_admin: true});
-        if (!adminFind) {
-            let err = {};
-            err.message = "this Admin not find!"
-            return errorHandler(res, err);
-        }
         let names = [];
         req.files.map(file => {
             names.push(file.filename)
         })
-        let docObj = {
-            witness: witnessId,
-            documents: names
+        const findWitness = await Models.witness.updateOne({_id: decodeToken.data.id, delete: false, disabled: false}, {
+            $set: {documents: names}
+        });
+        if(findWitness.nModified === 0) {
+            let err = {};
+            err.message = "Witness is not find!";
+            return errorHandler(res, err);
         }
-        const witnessDocumentCreate = await documentModel.create(docObj);
-        const witnessUpdate = await witnessModel.updateOne({_id: witnessId}, {$set: {document: witnessDocumentCreate._id}})
-        return successHandler(res, witnessDocumentCreate);
+        res.message = "You are upload documents!";
+        return successHandler(res, findWitness)
+    } catch (err) {
+        return errorHandler(res, err);
+    }
+}
+
+const downloadDoc = async (req, res) => {
+    try {
+        const token = req.authorization || req.headers['authorization'];
+        const decodeToken = await jsonwebtoken.decode(token);
+        const findUserDocs = await Models.witness.findOne({_id: decodeToken.data.id, delete: false, disabled: false})
+            .select('documents')
+        if(!findUserDocs) {
+            let err = {};
+            err.message = 'Documents is not find!';
+            return errorHandler(res, err);
+        }
+       // console.log(findUserDocs.documents)
+        findUserDocs.documents.map(item => {
+            res.download(path.join(__dirname, '../../Media', 'Documents', `${item}`));
+        })
+       // return successHandler(res, findUserDocs);
+    } catch (err) {
+        return errorHandler(res, err);
+    }
+}
+
+const getAppointment = async (req,res) => {
+    try {
+        const orderId = req.query.orderId;
+        const getOrder = await Models.book.findOne({_id: orderId, delete: false})
+            .populate('witness', ['avatar', 'firstName', 'lastName', 'rating']);
+        if(!getOrder) {
+            let err = {};
+            err.message = "Order is not find!";
+            return errorHandler(res, err);
+        }
+        return successHandler(res, getOrder);
     } catch (err) {
         return errorHandler(res, err);
     }
@@ -305,26 +209,32 @@ const getDocument = async (req,res) => {
     try {
         const token = req.authorization || req.headers['authorization'];
         const decodeToken = await jsonwebtoken.decode(token);
-        const findDocs = await documentModel.findOne({witness: decodeToken.data.id, status: status.ACTIVE});
+        const findDocs = await Models.witnessDocument.findOne({witness: decodeToken.data.id, delete: false});
         return successHandler(res, findDocs);
     } catch (err) {
         return errorHandler(res, err);
     }
 }
 
-const getWitnessDocument = async (req,res) => {
+const showLocation = async (req, res) => {
     try {
+        const { long, lat } = req.body;
         const token = req.authorization || req.headers['authorization'];
         const decodeToken = await jsonwebtoken.decode(token);
-        const witnessId = req.query.witnessId;
-        const adminFind = await userModel.findOne({_id: decodeToken.data.id, status: status.ACTIVE, role_admin: true});
-        if (!adminFind) {
+        let loc = {
+            type: 'Point',
+            coordinates: [long, lat]
+        }
+        const createWitnessLocation = await Models.witness.updateOne({_id: decodeToken.data.id, delete: false}, {
+            $set: {location: loc, updatedAt: Date.now()}
+        })
+        if (createWitnessLocation.nModified === 0) {
             let err = {};
-            err.message = "this Admin not find!"
+            err.message = "Witness is not find!";
             return errorHandler(res, err);
         }
-        const findDocs = await documentModel.findOne({witness: witnessId, status: status.ACTIVE});
-        return successHandler(res, findDocs);
+        res.message = "You are show your location successfully!";
+        return successHandler(res, loc)
     } catch (err) {
         return errorHandler(res, err);
     }
@@ -332,15 +242,13 @@ const getWitnessDocument = async (req,res) => {
 
 module.exports = {
     register,
-    getAll,
-    getAppointments,
+    getAppointment,
     getDocument,
-    getWitnessDocument,
-    able,
-    disable,
     uploadDocs,
+    downloadDoc,
     update,
     remove,
-    review,
-    rate
+    rate,
+    changePassword,
+    showLocation
 }

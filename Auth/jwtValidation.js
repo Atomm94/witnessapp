@@ -1,11 +1,9 @@
 const jwt = require('jsonwebtoken');
-const config = require('./config').config;
+const { config } = require('../config');
 const express = require('express');
 const token = express();
-const errorHandler = require('./Api/responseHandler').errorHandler;
-const successHandler = require('./Api/responseHandler').successHandler;
-const userModel = require('./Models/models').user;
-const witnessModel = require('./Models/models').witness;
+const { successHandler, errorHandler } = require('../Helper/responseHandler');
+const Models = require('../Models/models');
 
 token.use('/',async (req,res, next) => {
     const jwtAuth = req.authorization || req.headers['authorization'];
@@ -39,9 +37,9 @@ token.get('/getData', async (req,res) => {
     try {
         const token = req.authorization || req.headers['authorization'];
         const decodeToken = await jwt.decode(token);
-        const findReviewUser = await userModel.findOne({_id: decodeToken.data.id}, {token: 0, password: 0})
+        const findReviewUser = await Models.user.findOne({_id: decodeToken.data.id}, {token: 0, password: 0})
         if (!findReviewUser) {
-            const findReviewWitness = await witnessModel.findOne({_id: decodeToken.data.id}, {token: 0, password: 0})
+            const findReviewWitness = await Models.witness.findOne({_id: decodeToken.data.id}, {token: 0, password: 0})
             res.message = "witness"
             return successHandler(res, findReviewWitness);
         }
@@ -62,7 +60,6 @@ const socketAuth = async (socket, next) => {
     if (socket.handshake.query && socket.handshake.query.token) {
         jwt.verify(socket.handshake.query.token, config.tokenAuthKey, function (err, decoded) {
             if (err) return next(new Error('Authentication error'));
-            // console.log("dddeeeeee",decoded)
             socket.decoded = decoded;
             next();
         });

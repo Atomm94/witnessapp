@@ -1,6 +1,6 @@
 const socketio = require("socket.io");
 const Models = require('../../Models/models');
-const status = require('../../config').statusEnum
+//const { status } = require('../../config');
 const mongoose = require('mongoose');
 
 exports.listen = function (app) {
@@ -12,28 +12,25 @@ exports.listen = function (app) {
         socketIDsObject[userID]= id
 
         socket.on("message", async (friendID, message) => {
-            let findUser = await Models.user.findOne({_id: userID, status: status.ACTIVE});
+            let findUser = await Models.user.findOne({_id: userID, delete: false});
             if (!findUser) {
-                const findUserInWitness = await Models.witness.findOne({_id: userID, status: status.ACTIVE})
+                const findUserInWitness = await Models.witness.findOne({_id: userID, delete: false})
                 if (!findUserInWitness) {
                     console.log('User is not find!');
                 }
                 findUser = findUserInWitness
             }
-            let findFriend = await Models.witness.findOne({_id: friendID, status: status.ACTIVE});
+            let findFriend = await Models.witness.findOne({_id: friendID, delete: false});
             if (!findFriend) {
-                const findWitnessInUser = await Models.user.findOne({_id: friendID, status: status.ACTIVE})
+                const findWitnessInUser = await Models.user.findOne({_id: friendID, delete: false})
                 if (!findWitnessInUser) {
                     console.log('Friend is not find!');
                 }
             }
-
             const findChat = await Models.chat.findOne({$or: [{firstUserId: userID}, {secondUserId: userID}]});
             let mongoId = mongoose.Types.ObjectId();
             let id = `messages.${mongoId}`
             if(!findChat) {
-                // let mongoId = mongoose.Types.ObjectId();
-                // let id = `messages.${mongoId}`
                 await Models.chat.create({
                     firstUserId: userID,
                     secondUserId: friendID,
@@ -45,8 +42,6 @@ exports.listen = function (app) {
                     }
                 })
             } else {
-                // let mongoId = mongoose.Types.ObjectId();
-                // let id = `messages.${mongoId}`
                 await Models.chat.updateOne(
                     {$or: [{firstUserId: userID}, {secondUserId: userID}]},
                     {
@@ -57,10 +52,8 @@ exports.listen = function (app) {
                                 date: new Date()
                             }
                     },
-                   // {upsert: true}
                     )
             }
-
             socket.broadcast
                 .to(socketIDsObject[friendID])
                 .emit("newMessage", `${findUser.firstName} (${mongoId}): ${message}`);
@@ -72,11 +65,42 @@ exports.listen = function (app) {
                 console.log('Chat is not Find!');
             }
             let unsetData = {};
-            unsetData[`messages.${messageId}`] = ""
-            console.log(unsetData)
+            unsetData[`messages.${messageId}`] = "";
+
             await Models.chat.updateOne({_id: chatId}, {
                 $unset: unsetData
             })
+        })
+
+        socket.on("findNearWitness", async (userLong, userLat) => {
+            //console.log(userID)
+            const userFind = await Models.user.findOne({_id: userID, delete: false, disabled: false})
+                .select({firstName: 1, lastName: 1, mobileNumber: 1})
+            if (!userFind) {
+                console.log("User is not find!");
+            }
+            const findNearestWitness = await Models.witness.find({
+                location: {
+                    $nearSphere: {
+                        $geometry: {
+                            type : "Point",
+                            coordinates : [+userLong, +userLat]
+                        },
+                        $maxDistance: 4000
+                    }
+                }
+            }).select({firstName: 1, lastName: 1, phoneNumber: 1, carNumber: 1, carModel: 1, carColor: 1})
+            if (!findNearestWitness.length) {
+              //  console.log("no witness available now!");
+                socket.emit("findWitness", "no witness available now!");
+            } else {
+                await findNearestWitness.map(item => {
+                    socket.broadcast
+                        .to(socketIDsObject[item._id])
+                        .emit("newOrder", userFind)
+                })
+                socket.emit("findWitness", findNearestWitness);
+            }
         })
 
         socket.on("disconnect", async () => {

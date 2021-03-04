@@ -8,8 +8,8 @@ const storage = multer.diskStorage({
     }
 });
 
-const storageDoc = multer.diskStorage({
-    destination: './Media/PDF',
+const storageDocs = multer.diskStorage({
+    destination: './Media/Documents/',
     filename: async function(req, file, cb) {
         cb(null, file.originalname.replace(/\W+/g, '-').toLowerCase() + Date.now() + '.' + file.mimetype.split('/')[1]);
         console.log(file.mimetype.split('/')[1])
@@ -24,16 +24,7 @@ const imageFilter = function(req, file, cb) {
     cb(null, true);
 };
 
-const docFilter = function(req, file, cb) {
-    if (!file.originalname.match(/\.(pdf|PDF|txt|CSV)$/)) {
-        req.fileValidationError = 'Only document files are allowed!';
-        return cb(new Error('Only document files are allowed!'), false);
-    }
-    cb(null, true);
-};
-
 
 exports.imageFilter = imageFilter;
-exports.docFilter = docFilter;
 exports.storage = storage;
-exports.storageDoc = storageDoc;
+exports.storageDocs = storageDocs;

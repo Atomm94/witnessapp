@@ -1,5 +1,6 @@
 const nodemailer = require("nodemailer");
 let smtpTransport = require('nodemailer-smtp-transport');
+const cron = require('node-cron');
 
 const emailSend = async (email, resetPass) => {
     let mailOptions = {
@@ -11,14 +12,15 @@ const emailSend = async (email, resetPass) => {
                 <p style="color: cadetblue">${resetPass}</p>
               `
     };
-    let transporter = nodemailer.createTransport(smtpTransport({
-        service: "gmail",
-        host: 'smtp.gmail.com',
-        auth: {
-            user: 'accts.gowitness@gmail.com',
-            pass: 'DOM123%%craw337'
-        }
-    }));
+    let schedule = cron.schedule("18 17  1 2 1", function() {
+        let transporter = nodemailer.createTransport(smtpTransport({
+            service: "gmail",
+            host: 'smtp.gmail.com',
+            auth: {
+                user: 'accts.gowitness@gmail.com',
+                pass: 'DOM123%%craw337'
+            }
+        }));
 
         transporter.sendMail(mailOptions, function (error, info) {
             if (error) {
@@ -27,6 +29,8 @@ const emailSend = async (email, resetPass) => {
                 console.log('Email sent: ' + info.response);
             }
         });
+    })
+    await schedule.stop();
 }
 
 module.exports = {

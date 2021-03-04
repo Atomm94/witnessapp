@@ -3,21 +3,20 @@ const user = express();
 const controllers = require('./index');
 const validation = require('./validation')
 const multer = require('multer');
-const uploadImage = require('../../uploadFile');
+const uploadImage = require('../../Helper/uploadFile');
 const upload = multer({ storage: uploadImage.storage, fileFilter: uploadImage.imageFilter }).single('avatar');
+const uploadDocs = multer({ storage: uploadImage.storageDocs, fileFilter: uploadImage.imageFilter }).array('documents', 4);
 
-user.get('/admin/log/getAll', controllers.getAll)
 user.get('/log/getBooks', controllers.getBooks)
-user.get('/admin/log/getReview', controllers.getReview)
+user.get('/getAppointment', controllers.getAppointment)
 user.get('/log/getMessages', controllers.getMessages)
 user.post('/register', upload, validation.validateRegister, controllers.register)
+user.post('/log/uploadDoc', uploadDocs, controllers.uploadDocs)
 user.post('/login', validation.validateLogin, controllers.login)
-user.put('/admin/log/disable', controllers.disable)
-user.put('/admin/log/able', controllers.able)
 user.put('/log/update', upload, controllers.update)
 user.put('/log/rate', validation.validateRate, controllers.rate)
-user.put('/log/review', controllers.review)
-user.put('/log/admin', controllers.admin)
+user.put('/log/changePassword', controllers.changePassword)
+user.put('/log/findNearestWitness', controllers.findNearestWitness)
 user.delete('/log/delete', controllers.remove)
 
 

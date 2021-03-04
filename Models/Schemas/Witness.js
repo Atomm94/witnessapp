@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
-const status = require('../../config').statusEnum;
+const { workStatus } = require('../../Helper/constant');
 
 const witnessSchema = new Schema({
     avatar: {
@@ -31,6 +31,18 @@ const witnessSchema = new Schema({
         type: String,
         required: true
     },
+    carModel: {
+        type: String,
+        required: true
+    },
+    carNumber: {
+        type: String,
+        required: true
+    },
+    carColor: {
+        type: String,
+        required: true
+    },
     plateNumber: {
         type: String,
         required: true
@@ -42,6 +54,11 @@ const witnessSchema = new Schema({
     stateId: {
         type: String,
         required: true
+    },
+    workStatus: {
+        type: String,
+        enum: Object.values(workStatus),
+        default: workStatus.END
     },
     cardNumber: {
         type: String,
@@ -72,9 +89,9 @@ const witnessSchema = new Schema({
         type: Schema.Types.ObjectId,
         ref: 'book'
     }],
-    status: {
-        type: String,
-        default: status.ACTIVE
+    delete: {
+        type: Boolean,
+        default: false
     },
     rates: [{
         user: {
@@ -91,23 +108,22 @@ const witnessSchema = new Schema({
         type: Number,
         default: null
     },
-    reviews: [{
-        user: {
-            type: Schema.Types.ObjectId,
-            ref: 'user'
-        },
-        message: {
-            type: String,
-            required: true
-        }
-    }],
     disabled: {
         type: Boolean,
         default: false
     },
-    document: {
-        type: Schema.Types.ObjectId,
-        ref: 'witnessDocument'
+    documents: {
+        type: [String],
+        default: []
+    },
+    location: {
+        type: {
+            type: String,
+            enum: ['Point'],
+        },
+        coordinates: {
+            type: [Number],
+        }
     },
     createdAt: {
         type: Date,
@@ -115,5 +131,7 @@ const witnessSchema = new Schema({
     },
     updatedAt: Date
 })
+
+witnessSchema.index({ location: '2dsphere' });
 
 mongoose.model('witness', witnessSchema);
