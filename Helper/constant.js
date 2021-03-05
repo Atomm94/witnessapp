@@ -10,12 +10,14 @@ const persons = {
 
 const bookStatus = {
     ACCEPT: 'accept',
-    CANCEL: 'cancel'
+    CANCEL: 'cancel',
+    NON_ACCEPTED: 'non accepted!'
 }
 
 const workStatus = {
     START: 'start',
-    END: 'end'
+    END: 'end',
+    NON_STARTED: 'non started!'
 }
 
 const canceledByPerson = {
@@ -23,10 +25,16 @@ const canceledByPerson = {
     USER: 'user'
 }
 
+const driverStatus = {
+    FREE: 'free',
+    BUSY: 'busy'
+}
+
 module.exports = {
     witnessStatus,
     persons,
     bookStatus,
     workStatus,
-    canceledByPerson
+    canceledByPerson,
+    driverStatus
 }

@@ -69,7 +69,7 @@ const userSchema = new Schema({
         type: String,
         required: true
     },
-    books: [{
+    bookings: [{
         type: Schema.Types.ObjectId,
         ref: 'book'
     }],

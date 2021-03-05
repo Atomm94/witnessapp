@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const jsonwebtoken = require('jsonwebtoken');
 const Models = require('../../Models/models');
-const { status } = require('../../config');
+const { bookStatus, workStatus, driverStatus } = require('../../Helper/constant');
 const { successHandler, errorHandler } = require('../../Helper/responseHandler');
 const { hashPassword, comparePassword } = require('../../Helper/helpFunctions');
 const validate = require('./validation');
@@ -192,7 +192,7 @@ const downloadDoc = async (req, res) => {
 const getAppointment = async (req,res) => {
     try {
         const orderId = req.query.orderId;
-        const getOrder = await Models.book.findOne({_id: orderId, delete: false})
+        const getOrder = await Models.book.findOne({_id: orderId, delete: false, bookStatus: bookStatus.ACCEPT})
             .populate('witness', ['avatar', 'firstName', 'lastName', 'rating']);
         if(!getOrder) {
             let err = {};
@@ -240,6 +240,88 @@ const showLocation = async (req, res) => {
     }
 }
 
+const acceptBook = async (req, res) => {
+    try {
+        let err = {};
+        let { bookId } = req.query;
+        const token = req.authorization || req.headers['authorization'];
+        const decodeToken = await jsonwebtoken.decode(token);
+        const findWitness = await Models.witness.findOne({_id: decodeToken.data.id, delete: false, disabled: false, driverStatus: driverStatus.FREE});
+        if (!findWitness) {
+            err.message = "Witness is busy or is not find!";
+            return errorHandler(res, err);
+        }
+        const acceptBook = await Models.book.updateOne({_id: bookId, delete: false, bookStatus: bookStatus.NON_ACCEPTED}, {
+            $set: {bookStatus: bookStatus.ACCEPT, witness: decodeToken.data.id, updatedAt: Date.now()}
+        })
+        if (!acceptBook) {
+            err.message = "This book is not find!";
+            return errorHandler(res, err);
+        }
+        await Models.witness.updateOne({_id: decodeToken.data.id}, {
+            $set: {driverStatus: driverStatus.BUSY}, $push: {bookings: bookId}
+        })
+        res.message = "This witness accept this booking!";
+
+        return successHandler(res, null);
+    } catch (err) {
+        return errorHandler(res, err);
+    }
+}
+
+const startWork = async (req, res) => {
+    try {
+        let err = {};
+        let { bookId } = req.query;
+        const token = req.authorization || req.headers['authorization'];
+        const decodeToken = await jsonwebtoken.decode(token);
+        const findWitness = await Models.witness.findOne({_id: decodeToken.data.id, delete: false, disabled: false, driverStatus: driverStatus.FREE});
+        if (!findWitness) {
+            err.message = "Witness is busy or is not find!";
+            return errorHandler(res, err);
+        }
+        const startWork = await Models.book.updateOne({_id: bookId, delete: false, bookStatus: bookStatus.ACCEPT, workStatus: workStatus.NON_STARTED}, {
+            $set: {workStatus: workStatus.START, updatedAt: Date.now()}
+        })
+        if (!startWork) {
+            err.message = "This book is not accepted, canceled or already started or is not find!";
+            return errorHandler(res, err);
+        }
+        res.message = "This witness start this work!";
+        return successHandler(res, null);
+    } catch (err) {
+        return errorHandler(res, err);
+    }
+}
+
+const endWork = async (req, res) => {
+    try {
+        let err = {};
+        let { bookId } = req.query;
+        const token = req.authorization || req.headers['authorization'];
+        const decodeToken = await jsonwebtoken.decode(token);
+        const findWitness = await Models.witness.findOne({_id: decodeToken.data.id, delete: false, disabled: false, driverStatus: driverStatus.BUSY});
+        if (!findWitness) {
+            err.message = "Witness is not busy or is not find!";
+            return errorHandler(res, err);
+        }
+        const endWork = await Models.book.updateOne({_id: bookId, delete: false, bookStatus: bookStatus.ACCEPT, workStatus: workStatus.START}, {
+            $set: {workStatus: workStatus.END, updatedAt: Date.now()}
+        })
+        if (!endWork) {
+            err.message = "This book is not find!";
+            return errorHandler(res, err);
+        }
+        await Models.witness.updateOne({_id: decodeToken.data.id}, {
+            $set: {driverStatus: driverStatus.FREE}
+        })
+        res.message = "This witness end this work!";
+        return successHandler(res, null);
+    } catch (err) {
+        return errorHandler(res, err);
+    }
+}
+
 module.exports = {
     register,
     getAppointment,
@@ -250,5 +332,9 @@ module.exports = {
     remove,
     rate,
     changePassword,
-    showLocation
+    showLocation,
+    acceptBook,
+    startWork,
+    endWork
+   // cancelBook
 }

@@ -1,26 +1,9 @@
 const jsonwebtoken = require('jsonwebtoken');
 const Models = require('../../Models/models');
-const { persons, bookStatus } = require('../../Helper/constant');
+const { persons, bookStatus, workStatus } = require('../../Helper/constant');
 const { jwtToken } = require('../../Auth/jwtValidation');
 const { successHandler, errorHandler } = require('../../Helper/responseHandler');
 const { hashPassword, comparePassword } = require('../../Helper/helpFunctions');
-
-// const becomeToAdmin = async (req, res) => {
-//     try {
-//         const token = req.authorization || req.headers['authorization'];
-//         const decodeToken = await jsonwebtoken.decode(token);
-//         const chooseAdmin = await Models.user.updateOne({_id: decodeToken.data.id, delete: false, disabled: false}, {$set: {role_admin: true}});
-//         if (chooseAdmin.nModified === 0) {
-//             let err = {};
-//             err.message = 'This user is not find or he is already admin!';
-//             return errorHandler(res, err);
-//         }
-//         res.message = "user become to admin!";
-//         return successHandler(res, chooseAdmin)
-//     } catch (err) {
-//         return errorHandler(res, err);
-//     }
-// }
 
 /** Register, Login **/
 
@@ -104,7 +87,7 @@ const getWitnessDocument = async (req,res) => {
         const token = req.authorization || req.headers['authorization'];
         const decodeToken = await jsonwebtoken.decode(token);
         const witnessId = req.query.witnessId;
-        const adminFind = await Models.user.findOne({_id: decodeToken.data.id, delete: false, role_admin: true});
+        const adminFind = await Models.admin.findOne({_id: decodeToken.data.id, delete: false});
         if (!adminFind) {
             let err = {};
             err.message = "this Admin not find!";
@@ -226,7 +209,7 @@ const onGoingTrips = async (req,res) => {
             err.message = "Admin is not find!";
             return errorHandler(res, err);
         }
-        const getAllTrips = await Models.book.find({startWork: true, endWork: false, delete: false});
+        const getAllTrips = await Models.book.find({workStatus: workStatus.START, delete: false});
         return successHandler(res, getAllTrips);
     } catch (err) {
         return errorHandler(res, err);
@@ -246,7 +229,7 @@ const getAllAcceptedBooks = async (req,res) => {
             return errorHandler(res, err);
         }
         if (query.userId) {
-            const findUserBooks = await Models.book.find({user: query.userId, delete: false, status: bookStatus.ACCEPT})
+            const findUserBooks = await Models.book.find({user: query.userId, delete: false, bookStatus: bookStatus.ACCEPT})
             if (!findUserBooks) {
                 err.message = "this user is not find or haven't any accepted books";
                 return errorHandler(res, err);
@@ -254,7 +237,7 @@ const getAllAcceptedBooks = async (req,res) => {
             res.message = 'All accepted books of this user!';
             return successHandler(res, findUserBooks);
         } else {
-            const findWitnessBooks = await Models.book.find({witness: query.witnessId, delete: false, status: bookStatus.ACCEPT})
+            const findWitnessBooks = await Models.book.find({witness: query.witnessId, delete: false, bookStatus: bookStatus.ACCEPT})
             if (!findWitnessBooks) {
                 err.message = "this witness is not find or haven't any accepted books";
                 return errorHandler(res, err);
@@ -280,7 +263,7 @@ const getAllCanceledBooks = async (req,res) => {
             return errorHandler(res, err);
         }
         if (query.userId) {
-            const findUserBooks = await Models.book.find({user: query.userId, delete: false, status: bookStatus.CANCEL})
+            const findUserBooks = await Models.book.find({user: query.userId, delete: false, bookStatus: bookStatus.CANCEL})
             if (!findUserBooks) {
                 err.message = "this user is not find or haven't any canceled books";
                 return errorHandler(res, err);
@@ -288,7 +271,7 @@ const getAllCanceledBooks = async (req,res) => {
             res.message = 'All canceled books of this user!'
             return successHandler(res, findUserBooks);
         } else {
-            const findWitnessBooks = await Models.book.find({witness: query.witnessId, delete: false, status: bookStatus.CANCEL})
+            const findWitnessBooks = await Models.book.find({witness: query.witnessId, delete: false, bookStatus: bookStatus.CANCEL})
             if (!findWitnessBooks) {
                 err.message = "this witness is not find or haven't any canceled books";
                 return errorHandler(res, err);

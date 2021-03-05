@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
-const { workStatus } = require('../../Helper/constant');
+const { driverStatus } = require('../../Helper/constant');
 
 const witnessSchema = new Schema({
     avatar: {
@@ -55,11 +55,6 @@ const witnessSchema = new Schema({
         type: String,
         required: true
     },
-    workStatus: {
-        type: String,
-        enum: Object.values(workStatus),
-        default: workStatus.END
-    },
     cardNumber: {
         type: String,
         required: true
@@ -85,7 +80,7 @@ const witnessSchema = new Schema({
         type: String,
         required: true
     },
-    books: [{
+    bookings: [{
         type: Schema.Types.ObjectId,
         ref: 'book'
     }],
@@ -124,6 +119,10 @@ const witnessSchema = new Schema({
         coordinates: {
             type: [Number],
         }
+    },
+    driverStatus: {
+        type: String,
+        default: driverStatus.FREE
     },
     createdAt: {
         type: Date,

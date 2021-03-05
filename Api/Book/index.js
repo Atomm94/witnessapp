@@ -6,10 +6,11 @@ const { successHandler, errorHandler } = require('../../Helper/responseHandler')
 const createBook = async (req, res) => {
     try {
         let err = {};
-        let { startAddress, endAddress } = req.body;
-        startAddress = JSON.parse(startAddress);
-        endAddress = JSON.parse(endAddress);
-        const { witnessId } = req.query;
+        let { startLocation, endLocation } = req.body;
+        startLocation = JSON.parse(startLocation);
+        endLocation = JSON.parse(endLocation);
+        console.log(typeof(startLocation.long))
+        console.log(typeof(endLocation))
         const token = req.authorization || req.headers['authorization'];
         const decodeToken = await jsonwebtoken.decode(token);
         const userFind = await Models.user.findOne({_id: decodeToken.data.id, delete: false, disabled: false});
@@ -17,41 +18,23 @@ const createBook = async (req, res) => {
             err.message = "User is not find!";
             return errorHandler(res, err);
         }
-        if (userFind.role_admin) {
-            err.message = "This user is admin and can't booking!"
-            return errorHandler(res, err);
-        }
-        const witnessFind = await Models.witness.findOne({_id: witnessId, delete: false, disabled: false, workStatus: workStatus.END});
-        if (!witnessFind) {
-            err.message = "Witness is not find or was busy!";
-            return errorHandler(res, err);
-        }
         let saveObj = {
             user: decodeToken.data.id,
-            witness: witnessId,
-            startAddress: {
-                address: startAddress.address,
-                location: {
-                    type: 'Point',
-                    coordinates: startAddress.coordinates
-                }
+            bookStatus: bookStatus.NON_ACCEPTED,
+            startLocation: {
+                type: 'Point',
+                coordinates: [startLocation.long, startLocation.lat]
             },
-            endAddress: {
-                address: endAddress.address,
-                location: {
-                    type: 'Point',
-                    coordinates: endAddress.coordinates
-                }
+            endLocation: {
+                type: 'Point',
+                coordinates: [endLocation.long, endLocation.lat]
             },
         }
         const createData = await Models.book.create(saveObj);
         await Models.user.updateOne({_id: decodeToken.data.id}, {
-            $push: {books: createData._id}
+            $push: {bookings: createData._id}
         })
-        await Models.witness.updateOne({_id: witnessId}, {
-            $push: {books: createData._id}
-        })
-        res.message = "This user was booking this witness!";
+        res.message = "This user create a new book!";
         return successHandler(res, createData);
     } catch (err) {
         return errorHandler(res, err);
@@ -66,18 +49,18 @@ const cancelBook = async (req, res) => {
         const { bookId } = req.query;
         const token = req.authorization || req.headers['authorization'];
         const decodeToken = await jsonwebtoken.decode(token);
-        const userFind = await Models.user.findOne({_id: decodeToken.data.id, delete: false});
+        const userFind = await Models.user.findOne({_id: decodeToken.data.id, delete: false, disabled: false});
         if (!userFind) {
-            const witnessFind = await Models.witness.findOne({_id: decodeToken.data.id, delete: false});
+            const witnessFind = await Models.witness.findOne({_id: decodeToken.data.id, delete: false, disabled: false});
             if (!witnessFind) {
                 err.message = "User or Witness is not find!";
                 return errorHandler(res, err);
             }
-            const bookUpdatedByWitness = await Models.book.updateOne({_id: bookId}, {
-                $set: {status: bookStatus.CANCEL, reason: reason, canceledByPerson: canceledByPerson.WITNESS}
+            const bookUpdatedByWitness = await Models.book.updateOne({_id: bookId, status: bookStatus.ACCEPT, delete: false}, {
+                $set: {status: bookStatus.CANCEL, reason: reason, canceledByPerson: canceledByPerson.WITNESS, updatedAt: Date.now()}
             })
             if (bookUpdatedByWitness.nModified === 0) {
-                err.message = "Book is not find!"
+                err.message = "Book always canceled or is not find!";
                 return errorHandler(res, err)
             }
             resObj.canceledByPerson = {
@@ -85,16 +68,19 @@ const cancelBook = async (req, res) => {
                 id: decodeToken.data.id
             }
             res.message = 'This witness was cancel this book';
-            return successHandler(res, reason);
+            return successHandler(res, resObj);
         }
-        const bookUpdatedByUser = await Models.book.updateOne({_id: bookId}, {
-            $set: {status: bookStatus.CANCEL, reason: reason, canceledByPerson: canceledByPerson.USER}
+        const bookUpdatedByUser = await Models.book.updateOne({_id: bookId, status: bookStatus.ACCEPT, delete: false}, {
+            $set: {status: bookStatus.CANCEL, reason: reason, canceledByPerson: canceledByPerson.USER, updatedAt: Date.now()}
         })
+        if (bookUpdatedByUser.nModified === 0) {
+            err.message = "Book always canceled or is not find!";
+            return errorHandler(res, err);
+        }
         resObj.canceledByPerson = {
             type: canceledByPerson.USER,
             id: decodeToken.data.id
         }
-        resObj.reason = reason
         res.message = 'This user was cancel this book';
         return successHandler(res, resObj);
     } catch (err) {

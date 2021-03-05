@@ -3,7 +3,7 @@ const path = require('path');
 const jsonwebtoken = require('jsonwebtoken');
 const jwt = require('../../Auth/jwtValidation');
 const Models = require('../../Models/models');
-const { status } = require('../../config');
+const { bookStatus } = require('../../Helper/constant');
 const { successHandler, errorHandler } = require('../../Helper/responseHandler');
 const { hashPassword, comparePassword } = require('../../Helper/helpFunctions');
 const Url = require('url');
@@ -260,7 +260,7 @@ const getBooks = async (req,res) => {
 const getAppointment = async (req,res) => {
     try {
         const orderId = req.query.orderId;
-        const getOrder = await Models.book.findOne({_id: orderId, delete: false})
+        const getOrder = await Models.book.findOne({_id: orderId, delete: false, bookStatus: bookStatus.ACCEPT})
             .populate('user', ['avatar', 'firstName', 'lastName', 'rating']);
         if(!getOrder) {
             let err = {};

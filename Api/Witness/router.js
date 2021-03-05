@@ -13,10 +13,14 @@ witness.get('/log/getDocument', controllers.getDocument)
 witness.get('/log/downloadDocs', controllers.downloadDoc)
 witness.post('/register', upload, controllers.register)
 witness.post('/log/uploadDoc', uploadDocs, controllers.uploadDocs)
-witness.post('/postCoordinates', controllers.showLocation);
+witness.post('/postCoordinates', controllers.showLocation)
 witness.put('/log/update', upload, controllers.update)
 witness.put('/log/rate', validation.validateRate, controllers.rate)
 witness.put('/log/changePassword', controllers.changePassword)
+witness.put('/log/acceptBook', controllers.acceptBook)
+witness.put('/log/startWork', controllers.startWork)
+witness.put('/log/endWork', controllers.endWork)
+//witness.put('/log/cancelBook', controllers.cancelBook)
 witness.delete('/log/delete', controllers.remove)
 
 module.exports = {

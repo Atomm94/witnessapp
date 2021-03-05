@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
-const { bookStatus, workStatus, canceledByPerson } = require('../../Helper/constant');
+const { bookStatus, canceledByPerson, workStatus } = require('../../Helper/constant');
 
 const bookSchema = new Schema({
     user: {
@@ -11,33 +11,23 @@ const bookSchema = new Schema({
         type: Schema.Types.ObjectId,
         ref: 'witness'
     },
-    startAddress: {
-        address: String,
-        location: {
-            type: {
-                type: String,
-                enum: ['Point'],
-                required: true
-            },
-            coordinates: {
-                type: [Number],
-                required: true
-            }
+    startLocation: {
+        type: {
+            type: String,
+            enum: ['Point'],
         },
+        coordinates: {
+            type: [Number],
+        }
     },
-    endAddress: {
-        address: String,
-        location: {
-            type: {
-                type: String,
-                enum: ['Point'],
-                required: true
-            },
-            coordinates: {
-                type: [Number],
-                required: true
-            }
+    endLocation: {
+        type: {
+            type: String,
+            enum: ['Point'],
         },
+        coordinates: {
+            type: [Number],
+        }
     },
     delete: {
         type: Boolean,
@@ -48,10 +38,20 @@ const bookSchema = new Schema({
         type: String,
         enum: Object.values(canceledByPerson)
     },
-    status: {
+    bookStatus: {
         type: String,
         default: bookStatus.ACCEPT
-    }
+    },
+    workStatus: {
+        type: String,
+        enum: Object.values(workStatus),
+        default: workStatus.NON_STARTED
+    },
+    createdAt: {
+        type: Date,
+        default: Date.now()
+    },
+    updatedAt: Date
 })
 
 bookSchema.index({ location: '2dsphere' });
